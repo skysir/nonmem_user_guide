@@ -1,0 +1,47 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                     STANDARD ERROR OF ESTIMATE                     |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: NONMEM's estimate of the precision of its parameter estimates
+ CONTEXT: NONMEM output
+
+ DISCUSSION:
+ Asymptotic  statistical theory applied to extended least-squares esti-
+ mation (as used in NONMEM) says that the distribution of the parameter
+ estimators  is  multivariate  normal,  with variance-covariance matrix
+ that can be estimated from the data.  NONMEM supplies such an estimate
+ (See covariance matrix of estimate).  The square root of the ith diag-
+ onal element of the matrix is the standard error of the ith  parameter
+ estimate.  NONMEM output presents standard errors as in this example.
+
+  ****** STANDARD ERROR OF ESTIMATE ********************
+
+  THETA - VECTOR OF FIXED EFFECTS PARAMETERS  **********
+             TH 1      TH 2
+          6.27E+00  1.92E+01
+
+  OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+             ETA1      ETA2
+  ETA1    1.71E-02
+  ETA2   .........  1.12E-01
+
+  SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+             EPS1
+   EPS1   5.57E-03
+
+ Note that standard errors are given for all types of population param-
+ eters: THETA, the vector of fixed effects parameters,  and  OMEGA  and
+ SIGMA,  the  matrices  of random effects parameters.  In this example,
+ the 2x2 matrix, OMEGA, was constrained to  be  diagonal;  the  omitted
+ entry  (.........)  indicates that the element omega(2,1) is not esti-
+ mated, and consequently has no standard error.
+
+ REFERENCES: Guide I, section C.3.5.2 
+ REFERENCES: Guide V, section 5.4.2.1 

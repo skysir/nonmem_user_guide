@@ -1,0 +1,678 @@
+
+ 
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |# $RCS = ' $ID: NMHELP2HTML.PL,V 1.4 1999/02/16 18:14:24 NICLAS EXP |$ ' ;
+ |                                                                    |
+ +--------------------------------------------------------------------+
+ #  This script creates an html version of the nmhelp help files.  # It
+ requires perl version 5(.002).  # # Usage: perl nmhelp2html.pl -help #
+ # for more instructions.  # # Copyright (c) 1999 Niclas Jonsson # This
+ script may be used freely at your own risk. The script may  be  #  re-
+ distributed  as  long  as  this is done free of charge and that this #
+ header is not removed.
+
+ ## Makes an index file for nmhelp
+
+ use Getopt::Long; Getopt::Long::config("auto_abbrev");
+
+ ## Declare the options $res =  GetOptions("help",          #  Displays
+ help                                                           message
+
+ "fpath=s",        #   The   path   to   the   formatted   help   files
+
+ "npath=s",        #   Path   to  the  directory  with  the  new  files
+
+ "xref",            #    Tries    to    st    up   cross-refs   between
+
+ #                              help                              pages
+
+ "log"             #   If   used,  produces  two  log-files  pertaining
+
+ #                                                    cross-referencing
+                                                                     );
+ ## Print a help message if -h if ($opt_help) {
+   print << 'END';
+
+ nmhelp2www.pl version 1.0
+
+ This script creates a html-version of nmhelp from the formatted nmhelp
+ files that are distributed with NONMEM. Perl version 5.002 or  greater
+ required.
+
+  Usage: perl nmhelp2html.pl [-h] [-x] [-l] -f path_to_nmhelp_files
+                                             -n path_to_new_files
+
+ -h  prints  this message -f specifies the path to the formatted nmhelp
+ files are -n specifies the path to the directory in to which  the  new
+ files
+    should  go  -x  adds  cross-references to the help documents. NOTE!
+ Does not work
+    with NMhelp for NONMEM V.  -l produce  log-files  for  miss-matched
+ cross-references
+
+ The  script creates html-ized versions of all the nmhelp files plus an
+ index, or start page, called index.htm. To use  the  html-ized  nmhelp
+ files, open index.htm with your favorite web-browser.
+
+ Copyright  (c)  1999  Niclas Jonsson This script may be used freely at
+ your own risk. The script may be re-distributed as  long  as  this  is
+ done free of charge and the pod- documentation at the end of the docu-
+ ment, is not removed.
+
+ END
+
+   exit; }
+
+ ## Check that we did get the directories we need unless($opt_fpath) {
+   print "You will have to specify the directory path to the0;
+   print "formatted nmhelp files0;
+   die; }
+
+ unless($opt_npath) {
+   print "You will have to specify the directory path to the0;
+   print "place where the new files should go0;
+   die; }
+
+ ## At this point we should  have  the  directory  names  $f_helpdir  =
+ $opt_fpath; $n_helpdir = $opt_npath;
+
+ ##  Check  that  we  can  open the directories die "$f_helpdir doesn't
+ exist!0  unless -e $f_helpdir; die "$n_helpdir doesn't exist!0  unless
+ -e $n_helpdir;
+
+ ##  Create a link version of the n-dir to make the ## paths work on th
+ ePC  $n_link_helpdir   =   $n_helpdir;   $n_link_helpdir   =    s//|/;
+ $n_link_helpdir = "/$n_link_helpdir" if $n_link_helpdir =  //;
+
+ ## Check that the directories exists $indexfile  = "$f_helpdir/index";
+
+ ## ## Now the preliminaries are over. Time to get to work!  ##
+
+ ## Open the index file and create the lookup hashes open(INDEX,$index-
+ file) || die("Couldn't open the index file0);
+
+ while(<INDEX>) {
+   chomp;
+   ($file,$name,$kewords) = split(' ',$_);
+
+   ## Mapping names to files
+   $name2orgfile{$name} = $file;
+
+   ## We also want a hash for the new file names (with .htm)
+   $nfile = $file;
+   $nfile =  s/..{3}$/.htm/;
+   $name2file{$name} = $nfile;
+
+   ## Its is also convinient to be able to look up the new name
+   ## by the old and the other way around
+   $ofile2nfile{$file} = $nfile;
+   $nfile2ofile{$nfile} = $file;
+
+   ## Mapping files to names
+   $file2name{$file} = $name;
+
+   ## Insert the names in the keyword list
+   $nmtr    = $name;
+   $nmtr    =  tr/A-Z/a-z/;
+   $nmtr    =  s/^/;
+   $nmtr    =  tr/ /_/;
+   $kewords = $kewords." ".$nmtr;
+
+   foreach $kw (split(' ',$kewords)) {
+     $fl  = substr($kw,0,1);
+     #$fl  = $fl."_" if $fl =  /[a-z]/;;
+     $fl =  tr/A-Z/a-z/;
+     $ind{$fl}++;
+     push {$kwnm{$kw}}, $name;
+   }
+
+ } undef  $kw; close INDEX;
+
+ ##### ## Get the suffixes and the corresponding  category  definitions
+ #### unless($opt_xref) {
+   %suffdef     =     ("ctl"     =>    "NM-TRAN    Control    Records",
+                                   "dat" => "Reserved Data Items",
+                                              "exa" => "Examples",
+                                            "fil" => "Data files",
+                         "for" => "User-written FORTRAN Routines",
+                                      "gen" => "General Concepts",
+                                         "out" => "Output Report",
+                                                "ppp" => "PREDPP",
+                                          "stb" => "NONMEM Stubs",
+                                      "sup" => "Support Utilites",
+                              "utl" =>  "NONMEM Utility routines",
+                                    "uzg" =>  "NONMEM Users Guide"
+                                                                );    }
+ else {
+   open(CATFILE,"$f_helpdir/category.list") ||
+     die "Couldn't open category.list0;
+
+   while(<CATFILE>) {
+     chomp;
+     ($suff,$def) = split(' ',$_,2);
+     $suffdef{$suff} = $def;
+   }
+   close CATFILE; }
+
+ ##### ## Generate the global indices #### $first   = 1; thesekw = ();
+
+ ## Process each keyword and put each letter in a separate file kiwis =
+ sort keys %kwnm;
+
+ ## This is to make the capitalization work foreach $k (kiwis) {
+   $trk = $k;
+   $trk =  tr/A-Z/a-z/;
+   push {$trkw{$trk}},$k;
+   push trkiwis,$trk; } trkiwis = sort trkiwis;
+
+ $lastkw= $trkiwis[(scalar(trkiwis)-1)];
+
+ foreach $kw (trkiwis) {
+
+   ## If we haven't seen the beginning letter of this keyword, given
+   ## that it is not the first keyword, write the previous letters
+   ## document
+   unless(($seen{substr($kw,0,1)}++ and $first) or $kw eq $lastkw) {
+
+     print_index();
+
+     ## Clear $thesekw and store the new one
+     thesekw = ();
+     push thesekw,{$trkw{$kw}};
+
+   } else {
+     push thesekw, {$trkw{$kw}};
+     $first = 1;
+     ## Get the letter
+     $prevkw = $kw;
+   } }
+
+ print_index();
+
+ #####  ##  Open the directory and get all the files with the prespeci-
+ fied ## suffices #### opendir THISDIR,$f_helpdir || die "Couldn't open
+ the $f_helpdir directory0;
+
+ while(defined($file = readdir THISDIR)) {
+
+   ## Omit . and ..
+   next if $file =  /^./;
+   $file =  tr/A-Z/a-z/;
+   if($file =  /(.*).(.{3})$/) {
+
+     ## We will collect file names with the extensions
+     ## read from category.list above
+   TEST:
+     foreach $suff (keys %suffdef) {
+       if($2                 eq                 $suff)                {
+                                             push({$file{$2}},$1);
+                                        write_html_version($file);
+                                                        last TEST;
+       }
+     }
+   } }
+
+ ##### ## index.htm generating part ####
+
+ ##  Open  the  index   file   open(INDEX,">$n_helpdir/index.htm")   ||
+ die("Couldn't open the index.htm file0);
+
+ ##  Open the output and write the index print INDEX '<HTML>',"0; print
+ INDEX '<HEAD>',"0; print  INDEX  '<TITLE>  Hyper-NM74help  main  index
+ </TITLE>',"0;   print   INDEX   '</HEAD>',"0;   print   INDEX   '<BODY
+ BGCOLOR="#FFFFFF">',"0;
+
+ print INDEX '<H1><FONT SIZE=+4> This  is  the  main  index  of  Hyper-
+ NM74help</H1>',"0;
+
+ print  INDEX  "<P><FONT  SIZE=+1> Search Hyper-NM74help by clicking on
+ the first letter of a "; print INDEX "search term in the global  index
+ or   browse   the   help  files  ";  print  INDEX  "by  category.<FONT
+ SIZE=+0></p>0; print INDEX "<HR>0;
+
+ ## Print the global index print INDEX "<H2> Global index</H2>0;  print
+ INDEX  "<P>  Click on the first character of the keyword for which you
+ want help.</P>"; foreach $ind (sort keys %ind) {
+   $ind2 = substr($ind,0,1);
+   print INDEX "<A HREF='",$ind,".htm'",">$ind2</A>   0; }
+
+ print INDEX  "0HR>0;
+
+ ## Print the category index  print  INDEX  "<H2>Available  help  cate-
+ gories</H2>0;  print  INDEX  "<P>  Most  help documents are classified
+ according to the following"; print INDEX " categories. Click on a cat-
+ egory  to  see  a  the list of0; print INDEX "available help files for
+ that topic.0P>";
+
+ foreach $cat (sort keys %suffdef) {
+   $catfile = "$cat.htm";
+   print INDEX '<A HREF="',$catfile,'">',$suffdef{$cat},'</A><BR>'; }
+
+ print INDEX "0HR>0; print INDEX << "END"; <i><font size=-1>Created  by
+ nmhelp2html  v.  1.0  written  by  Niclas  Jonsson  (Modified  by  AJB
+ 5/2006,11/2007,10/2012/2017)</font>
+   </i><br> END
+
+ print INDEX '</BODY  BGCOLOR="#FFFFFF">',"0; print INDEX '</HTML>',"0;
+
+ ##### ## Generate the files with the categorical indicies #####  fore-
+ ach  $cat (sort keys %file) {
+   open OUTFILE,">$n_helpdir/$cat.htm";
+   print OUTFILE '<HTML>',"0;
+   print OUTFILE '<HEAD>',"0;
+   print OUTFILE "<TITLE> Index of file in category $cat </TITLE>","0;
+   print OUTFILE '</HEAD>',"0;
+   print OUTFILE '<BODY  BGCOLOR="#FFFFFF">',"0;
+
+   print  OUTFILE "<H1> Help for category $cat is available in the fol-
+ lowing";
+   print OUTFILE " files</H1>";
+   print OUTFILE "0HR>0;
+
+   foreach $fil (sort {$file{$cat}} ) {
+     $ohelpfile= "$fil.$cat";
+     $helpfile = $ofile2nfile{$ohelpfile};
+       print  OUTFILE  '<A  HREF="',"$helpfile",'">',$file2name{$ohelp-
+ file},'</A><BR>',"0;
+   }
+   print OUTFILE << "END";
+
+ <pre>Go to <A HREF=index.htm>main index</A>.</pre> <pre>
+   <hr ALIGN=LEFT WIDTH="450"></pre>
+     <i><font  size=-1>Created  by nmhelp2html v. 1.0 written by Niclas
+ Jonsson (Modified by AJB 5/2006,11/2007,10/2012)</font>
+       </i><br> END
+
+   print OUTFILE '</BODY>',"0;
+   print OUTFILE '</HTML>',"0;
+   close OUTFILE;
+
+ }
+
+ ## Here it was cut
+
+ #### ## Sub-routine section ###
+
+ sub print_index {
+
+   ## Will rely on that the global variables are set OK
+   $ind = substr($thesekw[0],0,1);
+   $ind2 = $ind;
+   $ind =  tr/A-Z/a-z/; #  $ind  = $ind."_" if $ind =  /[a-z]/;;
+
+   ## Open the output and write the header
+   open OUTFILE,">$n_helpdir/$ind.htm" || die "Couldn't open $ind.htm0;
+
+   print OUTFILE '<HTML>',"0;
+   print OUTFILE '<HEAD>',"0;
+   print OUTFILE "<TITLE> Hyper-NM74help  for  kewords  beginning  with
+ $ind</TITLE>","0;
+   print OUTFILE '</HEAD>',"0;
+   print OUTFILE '<BODY  BGCOLOR="#FFFFFF">',"0;
+
+   ## Print title
+   ## Print the beginning of the table
+   print OUTFILE '<TABLE BORDER COLS=2 WIDTH="100%" NOSAVE>',"0;
+   print OUTFILE '<TR>',"0;
+   print OUTFILE '<TD WIDTH="10%">',"<B>Keyword</B>",'</TD>',"0;
+   print OUTFILE '<TD>',"<B>Help documents</B>",'</TD>',"0;
+   print OUTFILE '</TR>',"0;
+
+   ## We need to do some processing to make the help documents look
+   ## nice.
+   ## Remove duplicate helpdocument entries (Black Magic!!)
+   foreach $x (thesekw) {
+     %seen1 = ();
+     {$kwnm{$x}} = grep {!$seen1{$_}++} {$kwnm{$x}};
+   }
+
+   ## Lump together kw with the same help docs
+   thesenewkw = ();
+  OUTER:
+   foreach $kw1 (thesekw) {
+     newkw = ();
+     push newkw, $kw1;
+     $newkw = $kw1;
+
+   INNER:
+     foreach $kw2 (thesekw) {
+       next INNER if $kw1 eq $kw2;
+       %count = ();
+
+       ## Get the common count
+       foreach       $e      ({$kwnm{$kw1}},      {$kwnm{$kw2}})      {
+                                                     $count{$e}++;
+       }
+
+       ## If the help documents are the same, $count{..} should have
+       ## nothing but twos
+       $equal = 1;
+       foreach $t (keys %count) {                                $equal
+ = 0 unless $count{$t} == 2;
+       }
+
+        if($equal) {
+                                                  push newkw,$kw2;
+                                    $newkw = join ', ',sort newkw;
+                                  {$kwnm{$newkw}} = {$kwnm{$kw1}};
+        }
+
+     }
+
+     push thesenewkw, $newkw;
+   }
+   ## Delete duplicates in the new kw
+   %seen1 = ();
+   thesenewkw = grep {!$seen1{$_}++} thesenewkw;
+
+   ## Print all the kewords and the corresponding links
+   foreach $x (thesenewkw) {
+     print OUTFILE '<TR>',"0;
+     ## Print the keword in the first column
+     print OUTFILE '<TD VALIGN=TOP WIDTH="10%">',$x;
+     for(split(',',$x)) {
+       $_ =  s/^//;
+       $_ =  tr/A-Z/a-z/;
+
+       ## We save the $_ because we know they're been used as targets
+       $used_targets{$_}++;
+
+       print OUTFILE '<A NAME="',$_,'"></A>';
+     }
+     print OUTFILE '</TD>',"  0;
+
+     ## Print the names
+     print OUTFILE '<TD>';
+
+     foreach  $nm ({$kwnm{$x}}) {
+       print OUTFILE '<A HREF="',"$name2file{$nm}",'">',$nm,'</A><BR>';
+     }
+
+     print OUTFILE '</TD>',"0;
+     print OUTFILE '</TR>',"0;
+   }
+
+   print OUTFILE '</TABLE>',"0;
+   print OUTFILE << "END";
+
+ <pre>Go to <A HREF=index.htm>main index</A>.</pre> <pre>
+   <hr ALIGN=LEFT WIDTH="450"></pre>
+     <i><font  size=-1>Created  by nmhelp2html v. 1.0 written by Niclas
+ Jonsson (Modified by AJB 5/2006,11/2007,10/2012)</font>
+       </i><br> END
+
+   print OUTFILE '</BODY>',"0;
+   print OUTFILE '</HTML>',"0;
+   close OUTFILE;
+
+   return() }
+
+ sub write_html_version {
+   my ($file) = _;
+
+   print "file f $file0;
+   open FFILE,"$f_helpdir/$file" ||
+     die "Couldn't open $f_helpdir/$file for reading0;
+   print "file g $file0;
+   print "file h $n_helpdir/$ofile2nfile{$file}0;
+   open NFILE,">$n_helpdir/$ofile2nfile{$file}" ||
+     die "Couldn't open $n_helpdir/$ofile2nfile{$file} for writing0;
+
+   ## The commented lines in this function has to do with  cross-refer-
+ ences
+   ## that will be become available with NMhelp for NM VI.
+
+   ## Go into the files and find the crossreferences
+   if($opt_xref) {
+     xrefs = ();
+
+     while(<FFILE>) {
+       chomp;
+       while(/e
+                                                             (.+?)
+                                                             /xg)
+                                                                 {
+                                              kws = split(',',$1);
+                                                   push xrefs,kws;
+                                                                 }
+     }
+
+     close FFILE;
+     open FFILE,"$f_helpdir/$file" ||
+       die "Couldn't open $f_helpdir/$file for reading0;
+   }
+
+   ffile = <FFILE>;
+   print NFILE "<HTML><HEAD> <TITLE> $file</TITLE><HEAD>0;
+   print NFILE '<BODY BGCOLOR="#FFFFFF">',"0;
+   print NFILE "<PRE>0;
+
+   if($opt_xref) {
+     for (ffile) {
+       s/</lt;/g;
+       s/>/gt;/g;
+       $prevmat ='';
+       foreach                $kw               (xrefs)               {
+                                                     $kw =  s/^//;
+                                                     $first = $kw;
+                                                  $first =  s/^//;
+                                      $first = substr($first,0,1);
+                                            $first =  tr/A-Z/a-z/;
+                                         $linkfile = "$first.htm";
+                                                  $kwtr     = $kw;
+                                         $kwtr     =  tr/A-Z/a-z/;
+                                             $kwtr     =  tr/ /_/;
+                                              $kwtr     =  s/.$//;
+
+      ## If we see a keyword after a See and, possibly, a previous
+                            ## matched string in the same sentence
+                                          if(/See.*?$prevmatkw/) {
+
+                                                ## Set up the link
+                                        if($used_targets{$kwtr}) {
+                              $linkfile = "$linkfile".'#'."$kwtr";
+                                                          } else {
+                             ## If we didn't fin a matching target
+                                       $close_kw = matchkw($kwtr);
+
+                                                   if($close_kw) {
+                          $linkfile = "$linkfile".'#'."$close_kw";
+                                                    if($opt_log) {
+                                                                  open
+ SUBS,                                             ">>substitutes.txt";
+                                                                  printf
+ SUBS         "%-45s         %-25s0,         $kwtr,          $close_kw;
+                                                                  close
+ SUBS;
+ }                                                             } else {
+                                          $linkfile = "$linkfile";
+                                                    if($opt_log) {
+                                                                  open
+ MISS,                                               ">>missmatch.txt";
+                                                                  print
+ MISS                                                         $kwtr,"0;
+                                                                  close
+ MISS;
+ }                                                                 }
+
+                                                                 }
+
+                                    $linkfile = '"'.$linkfile.'"';
+                          $ref      = "<A HREF=$linkfile>$kw</A>";
+
+                                                   ## Add the link
+                                     s/(See.*?$prevmat)kw/1 $ref/;
+                                              $prevmat = $ref.",";
+
+                                                                 }
+       }
+       print NFILE;
+     }
+   } else {
+     for (ffile) {
+       s/</lt;/g;
+       s/>/gt;/g;
+       print NFILE;
+     }
+   }
+
+   print NFILE << "END";
+
+   <pre>Go to <A HREF=index.htm>main index</A>.</pre> <pre>
+   <hr ALIGN=LEFT WIDTH="450"></pre>
+     <i><font  size=-1>Created  by nmhelp2html v. 1.0 written by Niclas
+ Jonsson (Modified by AJB 5/2006,11/2007,10/2012)</font>
+       </i><br> END
+
+   print NFILE "</BODY></HTML>0;
+
+   close NFILE;
+   close FFILE;
+
+ }
+
+ sub matchkw {
+
+   ## This sub-routine ahndles cross-references that do not match a
+   ## target in the global indices. Th eapproach is quite heuristic.
+   ## The keyword is matched at th ebeginning of all possible
+   ## targets. The link is then pointed at the target that provides the
+   ## longest match. If no match is found, th elink will point to the
+   ## ghlobal index for the first letter in the keyword.
+
+   my ($kw) = _;
+   undef %matched;
+
+   $kwlength = length($kw);
+
+   return(0) if $kwlength <3;
+
+   foreach $targ (keys %used_targets) {
+
+     $targlength = length($targ);
+
+     next if $targlength <3;
+
+     if($kwlength > $targlength) {
+       $kwstr = substr($kw,0,($targlength-1));
+     } else {
+       $kwstr = $kw;
+     }
+
+     unless($targ = /^Q$kwstr/) {
+       next;
+     } else {
+       ## Collect the matched targets by unmatched length
+       #$matched{length($`)+length($')} = $targ;
+       $matched{length($kwstr)} = $targ;
+     }
+   }
+
+   ## Check if we have found any matches
+   if(%matched) {
+
+     lngths = sort {$b<=>$a} keys %matched;
+
+     ## Return the target with the lowest unmatch
+     ## Ignore duplicates since they willbe overwritte
+     ## in %matched
+     return($matched{$lngths[0]});
+   } else {
+
+     return(0)
+   } }
+
+ =pod
+
+ =head1 NAME
+
+ nmhelp2www.pl - a perl script that converts nmhelp to html
+
+ =head1 SYNOPSIS
+
+  perl nmhelp2html.pl [-h] [-x] [-l] -f path_to_nmhelp_files
+                                     -n path_to_new_files
+
+ =head1 DESCRIPTION
+
+ The nmhelp2www.pl perl script converts  the  formatted  nmhelp  files,
+ distributed  together with NONMEM version V (and presumably also later
+ versions), into html. In addition, it creates a number of  indices  to
+ the  converted  help  documents.  The result is a system of html-files
+ that has almost the same and, in some respects, additional functional-
+ ity as the original nmhelp.
+
+ =head1 Options
+
+ =over 4
+
+ =item -h
+
+ Displays a brief help message.
+
+ =item -x
+
+ With  this  switch  the  script will try to establish cross-references
+ between the nmhelp files (see below).
+
+ =item -l
+
+ Print two log-files with information about cross-references for  which
+ an exact target was not found.
+
+ The  file F<substitutes.txt> contains two-columns. The first column is
+ the term that was to be cross-referenced  but  that  did  not  have  a
+ matching  target.  The  second term is the target that was substituted
+ for the non-existing target.
+
+ The file F<missmatch.txt> is a list of targets for which no  substitu-
+ tion could be found.
+
+ See below for more discussion about cross-references.
+
+ =item -f
+
+ The absolute path to the directory with the formatted nmhelp files.
+
+ =item -n
+
+ The  absolute  path  to  the  directory that should hold the html-ized
+ nmhelp system. This directory has to  exist  before  nmhelp2www.pl  is
+ run.
+
+ =back
+
+ =head2 CROSS-REFERENCES
+
+ Cross-references  are  links between nmhelp-files. Words that are con-
+ tained between C<(See > and the following C<)>  will  be  cross-refer-
+ enced. Multiple references should be separated by commas. In addition,
+ each C<(See  ...)>  cannot  include  any  line-breaks.  The  formatted
+ nmhelp-files  for  NONMEM V were not written in this way, meaning that
+ it is I<not> possible to get  cross-references  for  this  version  of
+ nmhelp.
+
+ =head2 Target matching
+
+ column  of  the  F<index> file in the nmhelp directory. As long as the
+ C<(See ...)> terms matches the possible targets, everything  is  fine.
+ If,  on  the other hand, one of the cross-reference terms do not match
+ any of the possible  targets,  the  following  heuristic  approach  is
+ taken: The cross-reference term is matched at the beginning of all the
+ possible targets. Given that at least one match is found,  the  target
+ giving the longest match is substituted for the target. If no match is
+ found, the cross-reference link will point to the index  page  of  the
+ first letter in the cross-reference term.
+
+ Information  about  the  substituted targets can be output in the file
+ F<substitutes.txt> by the use of the  C<-l>  switch.  Note  that  this
+ file, if it already exists, will be appended, i.e. not over-written.
+
+ =head1 AUTHOR
+
+ Niclas Jonsson 1999 Copyright (c)
+
+ =end
+

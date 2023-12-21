@@ -1,0 +1,67 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                                ELS                                 |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: ELS subroutine
+ CONTEXT: NONMEM utility routine
+
+ This feature is not fully documented.  The interested user may be able
+ to obtain more information by studying  the  appropriate  sections  of
+ NONMEM  code and previous examples that may be available from advanced
+ users.
+
+ USAGE:
+      USE SIZES,      ONLY:: ISIZE,DPSIZE,NO
+       ...
+      INTEGER(KIND=ISIZE) :: IER1,IER2
+      REAL(KIND=DPSIZE)   :: CNT,D
+      DIMENSION :: D(NO,2)
+       ...
+      CALL ELS (CNT,D,IER1,IER2)
+
+ DISCUSSION:
+ ELS is a NONMEM utility  routine.   It  computes  the  Extended  Least
+ Squares  contribution  to  the  objective function for the data from a
+ single individual ("L1") record.  It may be called by CONTR or SPTWO.
+
+ Output argument:
+
+  CNT Contribution to -2log likelihood for data from the L1  record  as
+      computed by extended least squares.
+
+   D(J,1)
+      value  of  RES  for  Jth observation record of the L1 record when
+      called by SPTWO; otherwise 0.
+
+   D(J,2)
+      value of WRES for Jth observation record of the  L1  record  when
+      called by SPTWO; otherwise 0.
+
+  IER1
+      =0 - Normal return.
+      >1 - Abnormal return.
+
+  IER2
+      undocumented error return code.
+
+ ELS obtains all its inputs from NONMEM read-only variables.
+
+ Certain NONMEM error messages refer to ELS, for example:
+
+ PROGRAM TERMINATED BY OBJ, ERROR IN ELS
+  WITH INDIVIDUAL 1 (IN INDIVIDUAL RECORD ORDERING)
+  VAR-COV OF DATA FROM INDIVIDUAL RECORD ESTIMATED TO BE SINGULAR
+
+ A common situation giving rise to this message is the use of a propor-
+ tional intra-individual error model while some  predicted  values  for
+ actual  observations  are zero or close to zero.  (For example, if the
+ first dose is an infusion and there is a "base- line"  observation  at
+ the start of the infusion, the predicted level will be zero.)
+
+ REFERENCES: Guide I, section C.1 
+ REFERENCES: Guide V, section 5.2.2 

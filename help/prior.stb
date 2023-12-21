@@ -1,0 +1,100 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                               PRIOR                                |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: PRIOR subroutine
+ CONTEXT: User-supplied subroutine; replaces a NONMEM dummy routine
+
+ USAGE:
+      SUBROUTINE PRIOR (ICALL,CNT)
+      USE SIZES, ONLY: ISIZE,DPSIZE
+      INTEGER(KIND=ISIZE), INTENT(IN) :: ICALL
+      REAL(KIND=DPSIZE),   INTENT(IN OUT) :: CNT
+
+ DISCUSSION:
+ The user-written PRIOR subroutine allows a penalty function based on a
+ frequency prior to be specified and  added  to  the  -2log  likelihood
+ function  (Gisleskog  et al, JPP, 2002, p. 473-505).  This serves as a
+ constraint on the estimates of THETA, OMEGA, and SIGMA and thus  as  a
+ way for stable estimates to be obtained with insufficient data.
+
+ When  the  Simulation  Step is implemented, THETA and OMEGA, and SIGMA
+ may also be simulated (along with etas and epsilons, should  any  such
+ appear  in  the model and have nonzero-variances) in the PRIOR subrou-
+ tine (See PRIOR_Simulation:_Parameters).  However, this  need  not  be
+ done  (simply execute a return in PRIOR at ICALL=4), in which case the
+ values for THETA, OMEGA, and SIGMA used in the simulation are the val-
+ ues  given  in  the NONMEM control stream or input Model Specification
+ File.
+
+ Input argument:
+
+  ICALL
+      Similar to ICALL for PRED subroutine.
+      Possible values: 0, 1, 2, and 4.
+      In a multiple problem run, PRIOR is called with ICALL=1 only with
+      the first problem.
+
+ Output argument:
+
+  CNT CNT is the penalty term.
+
+ Other Inputs:
+
+ Other  inputs  are  available  to  PRIOR  in NONMEM read-only modules.
+ (See NONMEM_modules).
+
+ NONMEM Utility Routines:
+
+ PRIOR  may  call   NONMEM   utility   routines,   NWPRI   and   TNPRI.
+ (See nwpri, tnpri).  E.g.,
+
+      SUBROUTINE PRIOR (ICALL,CNT)
+      USE SIZES, ONLY: DPSIZE,ISIZE
+      REAL (KIND=DPSIZE) :: CNT
+      REAL (KIND=DPSIZE) :: PLEV
+      INTEGER (KIND=ISIZE) :: ICALL
+      NTHETA=3
+      NETA=3
+      NEPS=1
+      NTHP=2
+      NETP=2
+      NEPP=1
+      PLEV=0
+      CALL NWPRI (NTHETA,NETA,NEPS,NTHP,NETP,NEPP,NPEXP,ITYP,PLEV, &
+                  NSAM,ISS,CNT)
+      RETURN
+      END
+
+ NWPRI  and TNPRI compute particular types of penalty functions.  NWPRI
+ computes a function based on a frequency prior that has a multivariate
+ normal  form  for  THETA, and also, in the case of population data, an
+ inverse Wishart form  for  OMEGA  (independent  from  the  normal  for
+ THETA).   When  used  during  a  Simulation Step, it produces a random
+ value of THETA and a random value of OMEGA from the  frequency  prior.
+ The  prior  information  is  entered manually into the control stream.
+ This prior is especially useful for a subjective  specification  of  a
+ penalty function.  (See nwpri, tnpri).
+
+ Model parameters may be constrained in various ways.  Those parameters
+ whose values are not fixed are transformed  to  new  parameters  whose
+ values are not at all constrained a priori (the "unconstrained parame-
+ ters", or UCP).  TNPRI computes a penalty function  based  on  a  fre-
+ quency  prior  that  has a multivariate normal form for all UCP.  When
+ used during a Simulation Step, it produces a random value of the  vec-
+ tor  of  all model parameters (whose values are not fixed).  The prior
+ information is found in an input model specification file, and it  has
+ been  automatically  stored  there  as  part of a NONMEM analysis of a
+ prior data set.  (See $msfi, model_specification_file).  This prior is
+ especially  useful  for  an empirical specification of a penalty func-
+ tion.  (See TNPRI).
+
+ The $PRIOR statement can be used instead of a PRIOR subroutine.
+ (See $prior.ctl).
+
+ REFERENCES: Guide V, section 12.4.16 

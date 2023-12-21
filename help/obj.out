@@ -1,0 +1,17 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                                OBJ                                 |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: OBJ subroutine
+ CONTEXT: NONMEM routine
+
+ DISCUSSION:
+ OBJ  is  a NONMEM routine.  It computes the objective function.  Error
+ messages from OBJ may indicate some difficulty in this computation.
+
+ REFERENCES: None.

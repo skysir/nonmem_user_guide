@@ -1,0 +1,31 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                           AMT DATA ITEM                            |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: Dose Amount (AMT) data item for PREDPP
+ CONTEXT: $INPUT record and NONMEM data set
+
+ USAGE:
+ $INPUT ... AMT ...
+
+ DISCUSSION:
+ AMT labels PREDPP's dose amount (AMT) data item.  The dose amount data
+ item is optional.
+
+ AMT must be 0 for non-dose event records.
+
+ AMT must be 0 for "steady-state with constant infusion" dose or reset-
+ dose event records.
+
+ AMT  must  be  a positive number in all other dose or reset-dose event
+ records.
+
+ (See dose, steady_state_dose).
+
+ REFERENCES: Guide VI, section V.D 
+ REFERENCES: Guide V, section 6.8 

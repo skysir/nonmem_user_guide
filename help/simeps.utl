@@ -1,0 +1,71 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                               SIMEPS                               |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: SIMEPS subroutine
+ CONTEXT: NONMEM utility routine
+
+ USAGE:
+      USE SIZES, ONLY: DPSIZE,LVR
+      REAL(KIND=DPSIZE):: EPS(LVR)
+      CALL SIMEPS (EPS)
+
+ DISCUSSION:
+ The  NONMEM  utility  routine  SIMEPS can be called by PRED during the
+ simulation step, to obtain simulated epsilon values.  It may be called
+ only when ICALL=4.
+
+ Output argument:
+
+  EPS An  array  into  which  SIMEPS  stores  simulated  epsilon values
+      EPS(1), EPS(2), ....  The dimension of the array may  be  smaller
+      than  the  maximum,  e.g., it may equal the number of epsilons in
+      the problem.
+
+ Simulated epsilon values arise from a multivariate normal  pseudo-ran-
+ dom  distribution with mean 0 and variance-covariance as specified for
+ SIGMA.  With  different  calls  to  SIMEPS  with  different  level-two
+ records, new and different simulated epsilon values are obtained.
+ (A level-two record has the same value of L2 and may also be called an |
+ L2 record.)  (See L2).
+ (When the L2 data item is not defined, all data records are  level-two
+ records,  and  so  different  data  records  are  different  level-two
+ records.)  By default, with different calls to SIMEPS  with  the  same
+ level-two  record,  the  same  simulated epsilon values are obtained -
+ those obtained at the first  call  with  the  record.   (There  is  an
+ advanced feature whereby records are "repeated"
+ (See Repetition_Variables),
+ and  when  records of a level-two record are being repeated, with dif-
+ ferent calls to SIMEPS with the  same  level-two  record,  the  values
+ obtained are the last values stored in these variables when the record
+ was previously passed to PRED.)
+
+ If, though, the NEW option is used with the first random source on the
+ $SIMULATION  record, then each time SIMEPS is called (with the same or
+ different level-two record), new and different  values  are  obtained.
+ With  any particular call to SIMEPS, the effect of the NEW option can,
+ though, be overridden;
+ (See Simulation:_IETAOL_IEPSOL)
+
+ So that simple simulation can be easily implemented  with  abbreviated
+ code,  values  of epsilon are obtained by calls to SIMEPS occurring in
+ the generated subroutine.  When the data are population data  and  the
+ Simulation  Step is implemented, SIMEPS is called once with every call
+ to PRED (or once at every call to ERROR if  PREDPP  is  used).   These
+ calls  are implemented so that even if, initially, the Simulation Step
+ is not implemented, the NONMEM  executable  resulting  from  using  an
+ abbreviated  code  for  PRED  (or  for ERROR if PREDPP is used) can be
+ reused with a run implementing the Simulation Step.
+
+ Additional calls to SIMEPS may appear in simulation blocks  of   $PRED
+ and $ERROR abbreviated code.
+ There is an analogous routine SIMETA.  (See simeta).
+
+ REFERENCES: Guide IV, section III.B.13 
+ REFERENCES: Guide V, section 12.4.8 
+ REFERENCES:  Guide  VI, section IV.B.1 , IV.B.2 , Figure 10

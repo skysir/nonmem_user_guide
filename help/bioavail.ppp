@@ -1,0 +1,48 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                 BIOAVAILABILITY FRACTION PARAMETER                 |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: Bioavailability fraction (F) parameter for PREDPP
+ CONTEXT: Additional PK Parameters
+
+ USAGE:
+ $PK
+  F1= ....
+
+ DISCUSSION:
+
+ Bioavailability  fraction  parameters  are used with PREDPP.  They are
+ optional additional PK parameters.  With each possible  dose  compart-
+ ment  of  the  kinetic model (the output compartment is not a possible
+ dose compartment), there is associated  one  bioavailability  fraction
+ (parameter), symbolized in the $PK record by the reserved variable Fn,
+ where n is the number of the compartment.
+
+ If the amount on a dose record is A, and the bioavailability  fraction
+ is  F,  only the fraction F of A actually appears in the dose compart-
+ ment (either instantaneously at the time the dose enters the  compart-
+ ment  -  with  a bolus dose, or over a period of time - with a regular
+ infusion; the bioavailability fraction does not  apply  to  a  steady-
+ state infusion).
+
+ Bioavailability fractions are optional in the sense that bioavailabil-
+ ity fractions associated with compartments never used as dose compart-
+ ments may be ignored. The values of bioavailability fractions that are
+ not computed in PK are always understood to be 1.
+
+ When additional doses are  specified  on  a  dose  event  record,  the
+ bioavailability fraction applies to the dose and to all the additional
+ doses.  When a steady-state dose is specified on a dose event  record,
+ the  bioavailability  fraction  applies to the dose and to all implied
+ doses leading to the steady-state.
+
+ (See cmt, pk, $pk, default_compartment).
+
+ REFERENCES: Guide IV, section V.C.5 
+ REFERENCES: Guide V, section 6.8 , 7.4.4 
+ REFERENCES: Guide VI, section III.F.6 , V.F.1 , V.H  

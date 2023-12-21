@@ -1,0 +1,42 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                     PK_PD_SEQUENTIAL_1 EXAMPLE                     |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ This  is  an  example for analysis of direct PD using previously esti-
+ mated individuals' PK parameters.  (See PK_PD_sequential_2 example).
+
+ $PROBLEM   EMAX MODEL APPLIED TO EFFECT SITE CONCENTRATION
+ ; NOTE: INDIVIDUAL K, V ESTIMATED FROM PREVIOUS PK FIT
+ ;       AND RECORDED IN DATA
+ ;
+ ; THE DATA FILE CONTAINS *ONLY* EFFECT OBSERVATIONS,
+ ; CMT = 2  NEEDED TO TELL PREDPP TO SET F = CE
+ $DATA   data
+ $INPUT  ID TIME DV AMT=DOSE CMT  KK V1
+ ;                                |---|
+ ;                              KK AND V1 ARE ESTIMATES OF K AND V
+ $SUBROUTINES ADVAN3
+ $PK
+    K  = KK
+    K12= .001*K                      ; TRIVIAL LOSS TO EFFECT COMPT.
+    K21= THETA(1)*EXP(ETA(1))
+    EMAX=THETA(2)*EXP(ETA(2))
+    C50= THETA(3)*EXP(ETA(3))
+    S2=  V1*K12/K21                  ; SO THAT CESS = CPSS
+ $ERROR
+    Y  =EMAX*F/(C50+F)*EXP(ERR(1))
+ ; ADD APPROPRIATE $THETA, $OMEGA, $SIGMA, $ESTIMATION, ETC.
+
+ If, moreover,  an absorption lag (ALAG1) parameter is modeled  in  $PK
+ with  parameters estimated from the PD data only, then this introduces
+ a lag in the dose - Ce relationship.  Since this lag was  not  present
+ in  the  dose - Cp relationship, it may be interpreted as a lag in the
+ Cp - Ce relationship.
+
+ REFERENCES: Guide IV, section V.C.6 
+ REFERENCES: Guide VI, section IV.B.2 , VII.C.3 

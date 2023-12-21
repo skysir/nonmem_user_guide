@@ -1,0 +1,40 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                               TRANS2                               |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: Choice of Translator Routine for PREDPP
+ CONTEXT: Option of NM-TRAN $SUBROUTINES record
+
+ USAGE:
+ $SUBROUTINES [TRANS=]TRANS2
+
+ SAMPLE:
+ $SUBROUTINE ADVAN1 TRANS2
+
+ DISCUSSION:
+ TRANS2  is a routine in PREDPP's library which can be used with ADVAN1
+ or ADVAN2.  It performs a reparameterization of the basic  PK  parame-
+ ters to the internal parameters K and KA.
+
+ Basic PK parameters for ADVAN1, TRANS2:
+
+      CL   clearance
+      V    volume of distribution
+
+      Relationship: K=CL/V
+
+ Basic PK parameters for ADVAN2, TRANS2:
+
+      CL   clearance
+      V    volume of distribution
+      KA   rate constant of absorption
+
+      Relationship: K=CL/V
+      KA=KA
+
+ REFERENCES: Guide VI, section III.A , VII.C.1 

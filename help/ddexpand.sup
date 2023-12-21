@@ -1,0 +1,34 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                              DDEXPAND                              |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: DDEXPAND program
+ CONTEXT: NONMEM run
+
+ USAGE:
+
+ ..\util\ddexpand  < original.ctl > new.ctl
+
+ DISCUSSION:
+ With NONMEM 7.4, The utility program ddexpand in the ..\util directory
+ will expand an NM-TRAN template control stream to propagate and incor-
+ porate delay differential equations (dde).
+
+ Example:
+
+ ddexpand dde3.dde dde3.ctl
+
+ The destination file dde3.ctl will be produced, and a finedata control
+ stream file (fine.ftl) will be  produced  and  submitted  to  finedata
+ utility to add extra doses to the data file identified in the dde3.dde
+ control stream.
+
+ For details and examples,
+ See INTRODUCTION TO NONMEM 7, ddexpand Utility Program
+
+ REFERENCES: Guide Introduction_7

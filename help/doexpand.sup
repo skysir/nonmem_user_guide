@@ -1,0 +1,32 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                              DOEXPAND                              |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: DOEXPAND program
+ CONTEXT: NONMEM run
+
+ USAGE:
+
+ ..\util\doexpand  < original.ctl > new.ctl
+
+ DISCUSSION:
+ With  NONMEM  7.4,  The utility program doexpand augments  abbreviated
+ code in an NM-TRAN control stream file that has  been  annotated  with
+ DOE  (which  stands  for DO expand) and ENDDOE (which stands for ENDDO
+ expand) directives. This is useful for repetitive code statements that
+ differ  only  by increments of indices.  For example, it is useful for
+ replicating derivative equations that differ only by their indices  to
+ DADT()  and  A(). These may occur with time delay and transit compart-
+ ment differential equations.
+
+ For details and examples,
+ See INTRODUCTION TO NONMEM 7: doexpand Utility Program
+
+ See also The DOPDE Method of Modeling PDE's.
+
+ REFERENCES: Guide Introduction_7

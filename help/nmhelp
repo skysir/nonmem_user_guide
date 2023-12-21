@@ -1,0 +1,263 @@
+#!/bin/bash
+lf=`pwd`
+# needs
+# lf= .... help directory
+# On-line help for NONMEM V (NONMEM PREDPP NM-TRAN)
+# nmhelp is part of the NONMEM Unix help system.
+# usage: help -or- help help -or- help topic ...
+# Written by AJ Boeckmann 4/96 Revised for bash 7/2009
+### IF /tmp DOES NOT EXIST, CHANGE NEXT PATH TO A PLACE FOR TEMPORARY FILES.
+docs=/tmp/helptmp$$
+
+### CHANGE NEXT PATHS IF NEEDED. 
+### On some systems, there are multiple versions of certain Unix utilities.
+### For example, in Solaris 1, /usr/5bin contains the system V versions 
+### of commands that differ between Solaris 1 (BSD UNIX) and Solaris 2 
+### (System V Unix). This shell script should work with either.
+### If your system has only one version, the default path is ok.
+### If it has multiple versions, this is a place to specify the full
+### path if you prefer a different version than the default.  E.g,
+###     set awk = /bin/awk
+###     set pager = less
+awk=awk
+pager=more
+cat=cat
+ecco=echo
+grep=grep
+sed=sed
+sort='sort -d'
+tr=tr
+mv=mv
+rm=rm
+uniq=uniq
+wc=wc
+ # fold and lpr are used only for hard-copy 
+fold=fold
+lpr=lpr
+index=index
+listhelp=listhelp
+p=0
+
+# if no arguments, print listhelp document
+if [[ $# = 0 ]]; then
+ $cat $lf/$listhelp | $pager
+ exit
+fi
+# if help help, give general advice
+if [[ "$1" == "help" || "$1" == "nmhelp" ]]; then
+ $cat $lf/helphelp | $pager
+ exit
+fi
+# function definitions start here
+newargv()
+{
+word=""
+space=" "
+if [[ "$1" = "-w" ]]; then
+  word="-w"
+  space=""
+  shift
+fi
+if [[ "$1" = "-a" ]]; then
+  space = ""
+  shift
+fi
+}
+# function
+ docount()
+ {
+  count=`$wc $docs | $awk '{ print $1}'`
+  if [[ $count == 0 ]]; then
+  $ecco "No help available for $name."
+  lc=`$ecco $name | $awk '{print substr($0,1,length($0)-1)}' `
+  if [[ "$lc"s = $name ]]; then
+    $ecco "Try help $lc"
+    fi
+  fi
+}
+displayonefile()
+{
+if [[ $p == 0 ]]; then
+  $cat -s $lf/$file | $pager
+  else
+  $ecco Printing $resp ...
+  $fold $lf/$file | $lpr
+  p=0
+  fi
+}
+search()
+{
+# search keyword entries in nman documents
+# these are hard to find.  They probably are in the a-z sequence.
+if [[ $name == '"' || $name == ":" || $name == "@" || $name == ";" \
+ || $name == "*" || $name == "#" ]]; then
+  $grep $name $lf/$index 
+  $grep $name $lf/$index |\
+  $awk 'BEGIN{FS="~"}{print $1" ~ "$2}' | $sort | $uniq > $docs
+ else
+lowname=`$ecco $name |  $tr '[A-Z]' '[a-z]' | $tr '-' '.' `
+lname=`$ecco $name | $awk '{print length($1)}'`
+# search for exact match if 1 or 2 characters
+if [[ $lname < 3 ]]; then
+ $grep -i -w $lowname $lf/$index |\
+ $awk 'BEGIN{FS="~"}{print $1" ~ "$2}' | $sort | $uniq > $docs
+ else
+# search if 3 or more characters
+ $grep  -i $word "$space$lowname" $lf/$index |\
+   $awk 'BEGIN{FS="~"}{print $1" ~ "$2}' | $sort | $uniq > $docs
+ fi
+ fi
+}
+
+makelist()
+{
+# separate examples to the bottom
+$rm -f $docs.0 >& /dev/null
+$grep -v '\.exa' $docs > $docs.0
+$grep '\.exa' $docs >> $docs.0
+$mv $docs.0 $docs
+$awk 'BEGIN{FS="~"}{print $1}' < $docs > $docs.1
+$awk 'BEGIN{FS="~"}{print $2}' < $docs > $docs.2
+# number the lines
+$awk '{printf("%2s %s\n", NR, $0)}' $docs.2 > $docs.3
+# make into a double column
+$awk '{ x[NR]=$0} \
+END { h=int(NR/2); if (h*2 !=NR)h++ ; \
+for (i=1;i<=h;i++) \
+printf("%-39.39s %-39.39s\n",x[i],x[i+h]) } ' <$docs.3 > $docs.4
+$grep -v '^ *$' < $docs.4 > $docs.3
+}
+
+askdisplay()
+{
+# added 1/93: if only one, show it immediately
+if [[ $maxans == 1 && $first == 0 ]]; then
+  file=`head -1 $docs`
+  displayonefile
+  ans=q
+  response=q
+else
+(( nextans = oldans + 1 )) 
+$ecco "Help for $name is available in the following documents:"
+$cat $docs.3
+$ecco 'Your choices:'
+$ecco '  enter "p number" to print a document (e.g., p1 or p 1)'
+$ecco '  enter the number of the document you wish to see'
+if (( $nextans <= $maxans )); then
+$ecco '  enter <CR> to see document number' $nextans
+$ecco '  enter q <CR> to quit this list'
+else
+$ecco '  enter q <CR> or <CR> to quit this list'
+fi
+read ans
+q=
+case "$ans" in
+q )
+response=q
+;;
+p ) 
+echo Please include document number
+response=again
+;;
+p*[0-9]) 
+p=1
+response=n
+number=`echo $ans | sed 's/p//' | sed 's/ //g'`
+oldans=$number
+if (( $number > $maxans)); then
+response=q
+fi
+;;
+x ) 
+response=q
+;;
+"" ) 
+response=n
+number=$nextans
+oldans=$number
+if (( $number > $maxans));  then
+response=q
+number=0
+fi
+;;
+[0-9]* )
+response=n
+number=$ans
+oldans=$number
+if (( $number > $maxans)); then
+response=q
+fi
+;;
+*)
+response=alpha
+esac
+fi
+}
+# end of function definitions
+
+# help topic ... main loop
+# this could be simpler,  but it allows user to change topics
+# while looking at the list of documents from a previous topic
+newargv
+name=$1
+while [ ! -z $name ]; do
+search
+makelist
+docount
+maxans=$count
+oldans=0
+first=0
+
+if [[ $count > 0 ]]; then
+response=none
+askdisplay
+while [[ $response = again ]]; do
+askdisplay
+done
+
+while [[ $response = alpha ]]; do
+name=$ans
+search
+makelist
+docount
+if [[ $count = 0 ]]; then
+exit
+fi
+askdisplay
+while [[ $response = again ]]; do
+askdisplay
+done
+done
+
+while [ $response != q ]; do
+$sed -n "$number,$number p" $docs.1
+resp=`$sed -n "$number,$number p" $docs.1`
+file=$resp
+displayonefile
+askdisplay
+while [[ $response = again ]]; do
+askdisplay
+done
+
+while [[ $response = alpha ]]; do
+name=$ans
+search
+makelist
+docount
+if [[ $count = 0 ]]; then
+exit
+fi
+askdisplay
+while [[ $response = again ]]; do
+askdisplay
+done
+done
+
+done
+fi
+
+shift
+name=$1
+done
+
+$rm -f $docs* >& /dev/null

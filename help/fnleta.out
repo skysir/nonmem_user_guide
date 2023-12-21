@@ -1,0 +1,19 @@
+
+
+
+ +--------------------------------------------------------------------+
+ |                                                                    |
+ |                               FNLETA                               |
+ |                                                                    |
+ +--------------------------------------------------------------------+
+
+ MEANING: FNLETA subroutine
+ CONTEXT: NONMEM routine
+
+ DISCUSSION:
+ FNLETA is a NONMEM routine.
+
+ An  error  message  from  FNLETA indicates that NONMEM has experienced
+ difficulties obtaining posthoc etas.
+
+ REFERENCES: None.
